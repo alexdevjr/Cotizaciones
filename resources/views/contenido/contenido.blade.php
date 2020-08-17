@@ -14,7 +14,7 @@
             </template>
 
             <template v-if="menu==3">
-                <bodega></bodega>
+                <app></app>
             </template>
 
             <template v-if="menu==4">

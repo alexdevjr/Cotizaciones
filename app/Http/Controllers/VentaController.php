@@ -10,6 +10,7 @@ use App\DetalleVenta;
 use App\User;
 use App\Notifications\NotifyAdmin;
 use Barryvdh\DomPDF\Facade as PDF;
+use Mail;
 
 class VentaController extends Controller
 {
@@ -98,33 +99,35 @@ class VentaController extends Controller
         return $pdf->download('venta-'.$numventa[0]->num_comprobante.'.pdf');        
     }
 
-    public function enviarPdf(Request $request, $id){
-        $venta = Venta::join('personas','ventas.idcliente','=','personas.id')
-        //->join('users','ventas.idusuario','=','users.id')
-        ->select('ventas.id','ventas.tipo_comprobante','ventas.serie_comprobante',
-        'ventas.num_comprobante','ventas.created_at','ventas.impuesto','ventas.total',
-        'ventas.estado','personas.nombre','personas.tipo_documento','personas.num_documento',
-        'personas.direccion','personas.email',
-        'personas.telefono')
-        ->where('ventas.id','=',$id)
-        ->orderBy('ventas.id', 'desc')->take(1)->get();
+    public function sendPdf(Request $request, $id){
+        $venta['email']=$request->get('email');
+        $venta['personas']=$request->get('personas');
+        $venta['subjet']=$request->get('subjet');
 
-        $detalles = DetalleVenta::join('articulos','detalle_ventas.idarticulo','=','articulos.id')
-        ->select('detalle_ventas.cantidad','detalle_ventas.precio','detalle_ventas.descuento',
-        'articulos.nombre as articulo')
-        ->where('detalle_ventas.idventa','=',$id)
-        ->orderBy('detalle_ventas.id', 'desc')->get();
+        $pdf = PDF::loadView('pdf.venta', $venta);
 
-
-        Mail::send('emails.mensaje', $venta, function($msj) use ($venta) {
-			    		
-			$pdf = PDF::loadView('pdf.venta',['venta'=>$venta,'detalles'=>$detalles]);
-			$msj->subject('Cotización');
-			$msj->to($venta['email']);
-								
-			$msj->attachData($pdf->output(),'.pdf');
-		}); 
-		return redirect ('/venta')->with('message','enviar');
+        try{
+            Mail::send('pdf.venta', $venta, function($message)use($venta,$pdf) {
+                $message->to($venta["email"], $venta["personas"])
+                ->subject($venta["subject"])
+                ->attachData($pdf->output(), ".pdf");
+                });
+            }catch(JWTException $exception){
+                $this->serverstatuscode = "0";
+                $this->serverstatusdes = $exception->getMessage();
+            }
+            if (Mail::failures()) {
+                 $this->statusdesc  =   "Error al enviar correo";
+                 $this->statuscode  =   "0";
+    
+            }else{
+    
+               $this->statusdesc  =   "Correo enviado satisfactoriamente";
+               $this->statuscode  =   "1";
+            }
+            return response()->json(compact('this'));
+     
+    
     }
 
     public function store(Request $request)

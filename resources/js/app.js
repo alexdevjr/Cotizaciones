@@ -25,12 +25,13 @@ window.swal = swal;
 
 Vue.component('categoria', require('./components/Categoria.vue').default);
 Vue.component('articulo', require('./components/Articulo.vue').default);
-Vue.component('bodega', require('./components/Bodega.vue').default);
 Vue.component('cliente', require('./components/Cliente.vue').default);
+Vue.component('app', require('./components/App.vue').default);
 Vue.component('user', require('./components/User.vue').default);
 Vue.component('venta', require('./components/Venta.vue').default);
 Vue.component('dashboard', require('./components/Dashboard.vue').default);
 Vue.component('notification', require('./components/Notification.vue').default);
+
 
 
 /**
